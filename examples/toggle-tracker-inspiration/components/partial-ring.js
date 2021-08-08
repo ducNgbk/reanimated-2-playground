@@ -1,14 +1,14 @@
-import React, {useMemo} from 'react';
+import React from 'react';
 import {StyleSheet, View} from 'react-native';
+import Animated, {useAnimatedStyle} from 'react-native-reanimated';
 
 interface Props {
-  size: number;
   outerRadius: number;
   innerRadius: number;
   color: string;
   innerColor: string;
   openColor: string;
-  openDegree: number;
+  openDegree: Animated.SharedValue<number>;
 }
 
 const PartialRing: React.FC<Props> = ({
@@ -19,13 +19,39 @@ const PartialRing: React.FC<Props> = ({
   outerRadius,
   openDegree,
 }) => {
-  const {upperRotate, lowerRotate} = useMemo(() => {
-    const degree = openDegree % 360;
+  const upperRotateUAS = useAnimatedStyle(() => {
+    const degree = openDegree.value % 360;
+    let rotate;
     if (degree < 180) {
-      return {upperRotate: 0, lowerRotate: degree};
+      rotate = 0;
+    } else {
+      rotate = degree - 180;
     }
-    return {upperRotate: degree - 180, lowerRotate: 180};
-  }, [openDegree]);
+    return {
+      transform: [
+        {translateY: -outerRadius / 2},
+        {rotate: `${rotate}deg`},
+        {translateY: outerRadius / 2},
+      ],
+    };
+  });
+
+  const lowerRotateUAS = useAnimatedStyle(() => {
+    const degree = openDegree.value % 360;
+    let rotate;
+    if (degree < 180) {
+      rotate = degree;
+    } else {
+      rotate = 180;
+    }
+    return {
+      transform: [
+        {translateY: outerRadius / 2},
+        {rotate: `${rotate}deg`},
+        {translateY: -outerRadius / 2},
+      ],
+    };
+  });
 
   return (
     <View style={styles.container}>
@@ -48,17 +74,15 @@ const PartialRing: React.FC<Props> = ({
               backgroundColor: color,
             },
           ]}>
-          <View
-            style={{
-              width: outerRadius * 2,
-              height: outerRadius,
-              backgroundColor: openColor,
-              transform: [
-                {translateY: -outerRadius / 2},
-                {rotate: `${upperRotate}deg`},
-                {translateY: outerRadius / 2},
-              ],
-            }}
+          <Animated.View
+            style={[
+              {
+                width: outerRadius * 2,
+                height: outerRadius,
+                backgroundColor: openColor,
+              },
+              upperRotateUAS,
+            ]}
           />
         </View>
       </View>
@@ -82,17 +106,15 @@ const PartialRing: React.FC<Props> = ({
               backgroundColor: color,
             },
           ]}>
-          <View
-            style={{
-              width: outerRadius * 2,
-              height: outerRadius,
-              backgroundColor: openColor,
-              transform: [
-                {translateY: outerRadius / 2},
-                {rotate: `${lowerRotate}deg`},
-                {translateY: -outerRadius / 2},
-              ],
-            }}
+          <Animated.View
+            style={[
+              {
+                width: outerRadius * 2,
+                height: outerRadius,
+                backgroundColor: openColor,
+              },
+              lowerRotateUAS,
+            ]}
           />
         </View>
       </View>
